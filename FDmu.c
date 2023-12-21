@@ -7,12 +7,7 @@
 #include "dislin.h"
 #include "Neutronic.h"
 
-const uint32_t GSVALUES[] = {10,40,100};
-#define GSLEN ArrayCount(GSVALUES)
-real32* GSTriAnsArrays[GSLEN][4];
-real32* GSPhiArrays[GSLEN][2];
-real32* GSXArrays[GSLEN];
-real32 GSErrorArray[GSLEN];
+//real32 GSErrorArray[GSLEN];
 //real32 TTimeArray[TLEN];
 
 #define MaxRows 20000
@@ -20,13 +15,9 @@ real32 GraphArray[2][MaxRows];
 
 
 
-#define a 	10.0f
-#define SA 	0.1f
-#define SS	0.2f
-#define s0	1000.0f
-#define EP	1e-7f
 // TODO: Centralize naming
 // TODO: Take arguments, debug level
+#define EP	1e-7f
 int main (int argc, char* argv[])
 {
     SetUpTiming();
@@ -38,56 +29,66 @@ int main (int argc, char* argv[])
     int DEBUG = 2;
     if (DEBUG) printf("Generating Graph for HW3-3\n");
 
+    uint32_t RCount = 2;
+    uint32_t NAr[] = {30, 10}; 
+    real32 SAr[] = {1000.0f, 0.0f};
+    real32 AAr[] = {.1f, .01f};
+    real32 DAr[] = {1.7f, 1.0f};
+    real32 aAr[] = {30.0f, 15.0f}; 
+
+    real32* GSTriAnsArrays[4];
+    real32* GSPhiArrays[2];
+    real32* GSXArrays;
+
+    uint32_t N = 0;
+    real32 Length = 0;
+    for (uint32_t i = 0; i < RCount; i++)
+    {
+        N += NAr[i];
+        Length += aAr[i];
+        aAr[i] /= (real32)NAr[i];
+    }
+
     
     if (DEBUG) printf("Allocing Arrays\n");
-    for (uint32_t i = 0; i < GSLEN; i++)
-    {
-        GSAlloc(GSTriAnsArrays[i], GSPhiArrays[i], &GSXArrays[i], GSVALUES[i]);
-    }
-    
+    GSAlloc(GSTriAnsArrays, GSPhiArrays, &GSXArrays, N);
 
     if (DEBUG) printf("Generating Data\n");
-	const real32 D = 1/(3*(SA+SS));
+
 	if (DEBUG) printf("\tSetting-Up Arrays\n");
-	for (uint32_t i = 0; i < GSLEN; i++)
+    // All Arrays are assumed zero intialised
+    for (uint32_t n = 0; n < N; n++)
     {
-		uint32_t N = GSVALUES[i];
-		real32 DeltaX = a/(real32)N; // DeltaX is constant
-		for (uint32_t n = 0; n < N+1; n++) {
-			GSXArrays[i][n] = a*((real32)n/(real32)N);
-			GSPhiArrays[i][0][n] = 0.f;
-			GSPhiArrays[i][1][n] = 0.f;
-		}
-        GSTriAnsArrays[i][0][0] = 0.f;
-        GSTriAnsArrays[i][1][0] = 1.f/(D/DeltaX+SA*DeltaX/2.f);
-		GSTriAnsArrays[i][2][0] = D/DeltaX;
-		GSTriAnsArrays[i][3][0] = s0*DeltaX/2.f;
-		
-		for (uint32_t n = 1; n < N; n++) {
-			GSTriAnsArrays[i][0][n] = D/DeltaX;
-			GSTriAnsArrays[i][1][n] = 1/(D/DeltaX+D/DeltaX+SA*DeltaX/2.f+SA*DeltaX/2.f);
-			GSTriAnsArrays[i][2][n] = D/DeltaX;
-			GSTriAnsArrays[i][3][n] = s0*DeltaX;
-		}
-		
-		GSTriAnsArrays[i][0][N] = D/DeltaX;
-        GSTriAnsArrays[i][1][N] = 1.f/(D/DeltaX+SA*DeltaX/2 +1.f/2.f);
-		GSTriAnsArrays[i][2][N] = 0.f;
-		GSTriAnsArrays[i][3][N] = s0*DeltaX/2.f;
+        real32 D  = ValCellN(n, DAr, RCount, NAr);
+        real32 dX = ValCellN(n, aAr, RCount, NAr);
+        real32 SA = ValCellN(n, AAr, RCount, NAr);
+        real32 s  = ValCellN(n, SAr, RCount, NAr);
+        GSTriAnsArrays[1][n]   += D/dX+SA*dX/2.f;
+        GSTriAnsArrays[2][n]   = D/dX;
+        GSTriAnsArrays[3][n]   += s*dX/2.f;
+        GSTriAnsArrays[0][n+1] = D/dX;
+        GSTriAnsArrays[1][n+1] += D/dX+SA*dX/2.f;
+        GSTriAnsArrays[3][n+1] += s*dX/2.f;
+        GSXArrays[n+1]         = GSXArrays[n] + dX;
     }
+    //Vacuum boundary
+    GSTriAnsArrays[1][N] += 0.5f;
     
+    for (uint32_t n = 0; n < N+1; n++) 
+    {
+        GSTriAnsArrays[1][n]   = 1.0f/GSTriAnsArrays[1][n];
+    }
+
 	
 	if (DEBUG) printf("\tPerforming Iteration\n");
-	for (uint32_t i = 0; i < GSLEN; i++)
+    real32 Convergence;
+    do
     {
-		uint32_t N = GSVALUES[i];
-		real32 Convergence;
-		do
-		{
-			Convergence = GSStep(GSTriAnsArrays[i], GSPhiArrays[i], N);
-		}
-		while (Convergence > EP);
-	}
+        Convergence = GSStep(GSTriAnsArrays, GSPhiArrays, N);
+    }
+    while (Convergence > EP);
+
+    /*
     if (DEBUG) printf("\tAnalytical Values\n");
 	const real32 L = sqrt(D/SA);
 	const real32 VacConst = s0/SA;
@@ -118,12 +119,12 @@ int main (int argc, char* argv[])
         printf("%i\t&%.3e\\\\\n", GSVALUES[i], GSErrorArray[i]);
         //printf("%i&\t%.3f\\\\\n", N, TrapArrays[i][1][N]);
     }
-	
+	*/
 
     
     if (DEBUG) printf("Starting Graphing\n");
 
-    if (DEBUG > 1) 
+    if (1)//(DEBUG > 1) 
     {
         metafl("XWIN");
     } 
@@ -153,16 +154,14 @@ int main (int argc, char* argv[])
     titlin ("Gauss-Seidel Finite Difference Method", 1);
 
     setgrf("NAME","NAME","TICKS","TICKS");
-    graf   (0.f, a, 0.f, 20.f, 0.f, 11000.f, 0.f, 2000.f);
+    graf   (0.f, Length, 0.f, 20.f, 0.f, 11000.f, 0.f, 2000.f);
 
     title();
 	chncrv("COLOR");
-	curve(GraphArray[0], GraphArray[1], MaxRows);
+	//curve(GraphArray[0], GraphArray[1], MaxRows);
     
 	incmrk(-1);
-	curve(GSXArrays[0],GSPhiArrays[0][0],GSVALUES[0]+1);
-	curve(GSXArrays[1],GSPhiArrays[1][0],GSVALUES[1]+1);
-	curve(GSXArrays[2],GSPhiArrays[2][0],GSVALUES[2]+1);
+	curve(GSXArrays,GSPhiArrays[0],N+1);
 
 	color("FORE");
 	
@@ -176,7 +175,7 @@ int main (int argc, char* argv[])
 
 	legtit("Legend");
     //legbgd(0);
-    legend(LegendBuffer, 3);
+    //legend(LegendBuffer, 3);
 	
     endgrf();
     disfin();

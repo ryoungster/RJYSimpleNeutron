@@ -53,14 +53,30 @@ void
 GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
 {
     // Allocates (N + 1) * 7 arrays for Gauss Seidel
-    TriArray[0]  = malloc(sizeof(real32)*(N+1));
-    TriArray[1]  = malloc(sizeof(real32)*(N+1));
-    TriArray[2]  = malloc(sizeof(real32)*(N+1));
-    TriArray[3]  = malloc(sizeof(real32)*(N+1));
-    PhiArrays[0] = malloc(sizeof(real32)*(N+1));
-    PhiArrays[1] = malloc(sizeof(real32)*(N+1));
-    *XArray      = malloc(sizeof(real32)*(N+1));
+    // (DOCS) Initialization to all bits zero does not guarantee that a 
+    // floating-point would be initialized to 0.0 (although that is true on all common platforms) (DOCS)
+    // Here we operate assuming this to be the case
+    TriArray[0]  = (real32*)calloc(N+1, sizeof(real32));
+    TriArray[1]  = (real32*)calloc(N+1, sizeof(real32));
+    TriArray[2]  = (real32*)calloc(N+1, sizeof(real32));
+    TriArray[3]  = (real32*)calloc(N+1, sizeof(real32));
+    PhiArrays[0] = (real32*)calloc(N+1, sizeof(real32));
+    PhiArrays[1] = (real32*)calloc(N+1, sizeof(real32));
+    *XArray      = (real32*)calloc(N+1, sizeof(real32));
 		
+}
+
+inline real32
+ValCellN(uint32_t n, real32* PropAr, uint32_t RCount, uint32_t* NAr)
+{
+    for (uint32_t i = 0; i < RCount; i++)
+    {
+        if (n < NAr[i])
+        {
+            return PropAr[i];
+        }
+        n -= NAr[i];
+    }
 }
 
 real32 GSStep(real32** TriArray, real32** PhiArrays, uint32_t N)

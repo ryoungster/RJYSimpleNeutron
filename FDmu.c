@@ -62,7 +62,7 @@ int main (int argc, char* argv[])
 
 	if (DEBUG) printf("\tSetting-Up Arrays\n");
 
-    GSInitVR(GSTriAnsArrays, GSXArrays, N, RegionInfo, NAr, RCount);
+    GSInitVR(GSTriAnsArrays, GSXArrays, N, RegionInfo, NAr);
 	
 	if (DEBUG) printf("\tPerforming Iteration\n");
     real32 Convergence;

@@ -49,31 +49,20 @@ int main (int argc, char* argv[])
     if (DEBUG) printf("Generating Data\n");
 	const real32 D = 1/(3*(SA+SS));
 	if (DEBUG) printf("\tSetting-Up Arrays\n");
+    real32 SAr[] = {s0};
+    real32 AAr[] = {SA};
+    real32 DAr[] = {D};
+    real32 aAr[1];
+    uint32_t NAr[1];
+
+    real32* RegionInfo[] = {SAr, AAr, DAr, aAr};
 	for (uint32_t i = 0; i < GSLEN; i++)
     {
 		uint32_t N = GSVALUES[i];
 		real32 DeltaX = a/(real32)N; // DeltaX is constant
-		for (uint32_t n = 0; n < N+1; n++) {
-			GSXArrays[i][n] = a*((real32)n/(real32)N);
-			GSPhiArrays[i][0][n] = 0.f;
-			GSPhiArrays[i][1][n] = 0.f;
-		}
-        GSTriAnsArrays[i][0][0] = 0.f;
-        GSTriAnsArrays[i][1][0] = 1.f/(D/DeltaX+SA*DeltaX/2.f);
-		GSTriAnsArrays[i][2][0] = D/DeltaX;
-		GSTriAnsArrays[i][3][0] = s0*DeltaX/2.f;
-		
-		for (uint32_t n = 1; n < N; n++) {
-			GSTriAnsArrays[i][0][n] = D/DeltaX;
-			GSTriAnsArrays[i][1][n] = 1/(D/DeltaX+D/DeltaX+SA*DeltaX/2.f+SA*DeltaX/2.f);
-			GSTriAnsArrays[i][2][n] = D/DeltaX;
-			GSTriAnsArrays[i][3][n] = s0*DeltaX;
-		}
-		
-		GSTriAnsArrays[i][0][N] = D/DeltaX;
-        GSTriAnsArrays[i][1][N] = 1.f/(D/DeltaX+SA*DeltaX/2 +1.f/2.f);
-		GSTriAnsArrays[i][2][N] = 0.f;
-		GSTriAnsArrays[i][3][N] = s0*DeltaX/2.f;
+        aAr[0] = DeltaX;
+        NAr[0] = N;
+        GSInitVR(GSTriAnsArrays[i], GSXArrays[i], N, RegionInfo, NAr);
     }
     
 	

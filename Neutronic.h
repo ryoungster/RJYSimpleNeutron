@@ -54,10 +54,7 @@ void
 GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N);
 
 void
-GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr, uint32_t RCount);
-
-inline real32
-ValCellN(uint32_t n, real32* PropAr, uint32_t RCount, uint32_t* NAr);
+GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr);
 
 real32
 GSStep(real32** TriArray, real32** PhiArrays, uint32_t N);
@@ -81,16 +78,22 @@ GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
 }
 
 void
-GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr, uint32_t RCount)
+GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr)
 {   
     // Init vacuum right
     // All Arrays are assumed zero 
-    for (uint32_t n = 0; n < N; n++)
+    uint32_t RIndex = 0;
+    for (uint32_t n = 0, nInternal = 0; n < N; n++, nInternal++)
     {
-        real32 s  = ValCellN(n, RI[0], RCount, NAr);
-        real32 SA = ValCellN(n, RI[1], RCount, NAr);
-        real32 D  = ValCellN(n, RI[2], RCount, NAr);
-        real32 dX = ValCellN(n, RI[3], RCount, NAr);
+        if (nInternal >= NAr[RIndex])
+        {
+            nInternal = 0;
+            RIndex++;
+        }
+        real32 s  = RI[0][RIndex];
+        real32 SA = RI[1][RIndex];
+        real32 D  = RI[2][RIndex];
+        real32 dX = RI[3][RIndex];
         TriAnsArray[1][n]   += D/dX+SA*dX/2.f;
         TriAnsArray[2][n]   = D/dX;
         TriAnsArray[3][n]   += s*dX/2.f;
@@ -106,22 +109,6 @@ GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t
     {
         TriAnsArray[1][n]   = 1.0f/TriAnsArray[1][n];
     }
-}
-
-inline real32
-ValCellN(uint32_t n, real32* PropAr, uint32_t RCount, uint32_t* NAr)
-{
-    for (uint32_t i = 0; i < RCount; i++)
-    {
-        if (n < NAr[i])
-        {
-            return PropAr[i];
-        }
-        n -= NAr[i];
-    }
-    // Out of range, should not be reached
-    // TODO: This is a placeholder for error handling
-    return 0.0f;
 }
 
 real32

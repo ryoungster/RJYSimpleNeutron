@@ -42,6 +42,8 @@ int main (int argc, char* argv[])
     if (DEBUG) printf("Allocing Arrays\n");
     for (uint32_t i = 0; i < GSLEN; i++)
     {
+        GSAlloc(GSTriAnsArrays[i], GSPhiArrays[i], &GSXArrays[i], GSVALUES[i]);
+            /*
         GSTriAnsArrays[i][0] = malloc(sizeof(real32)*(GSVALUES[i]+1));
         GSTriAnsArrays[i][1] = malloc(sizeof(real32)*(GSVALUES[i]+1));
 		GSTriAnsArrays[i][2] = malloc(sizeof(real32)*(GSVALUES[i]+1));
@@ -49,6 +51,7 @@ int main (int argc, char* argv[])
 		GSPhiArrays[i][0] = malloc(sizeof(real32)*(GSVALUES[i]+1));
         GSPhiArrays[i][1] = malloc(sizeof(real32)*(GSVALUES[i]+1));
 		GSXArrays[i] = malloc(sizeof(real32)*(GSVALUES[i]+1));
+        */
     }
     
 

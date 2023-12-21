@@ -49,7 +49,19 @@ Win32GetSecondsElapsed(LARGE_INTEGER Start, LARGE_INTEGER End)
 typedef LARGE_INTEGER TimerCount;
 #endif
 
-
+void
+GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
+{
+    // Allocates (N + 1) * 7 arrays for Gauss Seidel
+    TriArray[0]  = malloc(sizeof(real32)*(N+1));
+    TriArray[1]  = malloc(sizeof(real32)*(N+1));
+    TriArray[2]  = malloc(sizeof(real32)*(N+1));
+    TriArray[3]  = malloc(sizeof(real32)*(N+1));
+    PhiArrays[0] = malloc(sizeof(real32)*(N+1));
+    PhiArrays[1] = malloc(sizeof(real32)*(N+1));
+    *XArray      = malloc(sizeof(real32)*(N+1));
+		
+}
 
 real32 GSStep(real32** TriArray, real32** PhiArrays, uint32_t N)
 {

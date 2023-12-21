@@ -17,7 +17,6 @@ real32 GraphArray[2][MaxRows];
 
 // TODO: Centralize naming
 // TODO: Take arguments, debug level
-#define EP	1e-7f
 int main (int argc, char* argv[])
 {
     SetUpTiming();
@@ -35,6 +34,7 @@ int main (int argc, char* argv[])
     real32 AAr[] = {.1f, .01f};
     real32 DAr[] = {1.7f, 1.0f};
     real32 aAr[] = {30.0f, 15.0f}; 
+    real32 EP    = 1e-7f;
 
     real32* GSTriAnsArrays[4];
     real32* GSPhiArrays[2];
@@ -55,30 +55,14 @@ int main (int argc, char* argv[])
 
     if (DEBUG) printf("Generating Data\n");
 
-	if (DEBUG) printf("\tSetting-Up Arrays\n");
-    // All Arrays are assumed zero intialised
-    for (uint32_t n = 0; n < N; n++)
-    {
-        real32 D  = ValCellN(n, DAr, RCount, NAr);
-        real32 dX = ValCellN(n, aAr, RCount, NAr);
-        real32 SA = ValCellN(n, AAr, RCount, NAr);
-        real32 s  = ValCellN(n, SAr, RCount, NAr);
-        GSTriAnsArrays[1][n]   += D/dX+SA*dX/2.f;
-        GSTriAnsArrays[2][n]   = D/dX;
-        GSTriAnsArrays[3][n]   += s*dX/2.f;
-        GSTriAnsArrays[0][n+1] = D/dX;
-        GSTriAnsArrays[1][n+1] += D/dX+SA*dX/2.f;
-        GSTriAnsArrays[3][n+1] += s*dX/2.f;
-        GSXArrays[n+1]         = GSXArrays[n] + dX;
-    }
-    //Vacuum boundary
-    GSTriAnsArrays[1][N] += 0.5f;
-    
-    for (uint32_t n = 0; n < N+1; n++) 
-    {
-        GSTriAnsArrays[1][n]   = 1.0f/GSTriAnsArrays[1][n];
-    }
+    // Format:
+    // Source, SigmaA, D, deltaX
+    real32* RegionInfo[] = {SAr, AAr, DAr, aAr};
 
+
+	if (DEBUG) printf("\tSetting-Up Arrays\n");
+
+    GSInitVR(GSTriAnsArrays, GSXArrays, N, RegionInfo, NAr, RCount);
 	
 	if (DEBUG) printf("\tPerforming Iteration\n");
     real32 Convergence;

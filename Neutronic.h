@@ -49,6 +49,20 @@ Win32GetSecondsElapsed(LARGE_INTEGER Start, LARGE_INTEGER End)
 typedef LARGE_INTEGER TimerCount;
 #endif
 
+
+void
+GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N);
+
+void
+GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr, uint32_t RCount);
+
+inline real32
+ValCellN(uint32_t n, real32* PropAr, uint32_t RCount, uint32_t* NAr);
+
+real32
+GSStep(real32** TriArray, real32** PhiArrays, uint32_t N);
+
+
 void
 GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
 {
@@ -66,6 +80,34 @@ GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
 		
 }
 
+void
+GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr, uint32_t RCount)
+{   
+    // Init vacuum right
+    // All Arrays are assumed zero 
+    for (uint32_t n = 0; n < N; n++)
+    {
+        real32 s  = ValCellN(n, RI[0], RCount, NAr);
+        real32 SA = ValCellN(n, RI[1], RCount, NAr);
+        real32 D  = ValCellN(n, RI[2], RCount, NAr);
+        real32 dX = ValCellN(n, RI[3], RCount, NAr);
+        TriAnsArray[1][n]   += D/dX+SA*dX/2.f;
+        TriAnsArray[2][n]   = D/dX;
+        TriAnsArray[3][n]   += s*dX/2.f;
+        TriAnsArray[0][n+1] = D/dX;
+        TriAnsArray[1][n+1] += D/dX+SA*dX/2.f;
+        TriAnsArray[3][n+1] += s*dX/2.f;
+        XArray[n+1]         = XArray[n] + dX;
+    }
+    //Right Vacuum boundary
+    TriAnsArray[1][N] += 0.5f;
+    
+    for (uint32_t n = 0; n < N+1; n++) 
+    {
+        TriAnsArray[1][n]   = 1.0f/TriAnsArray[1][n];
+    }
+}
+
 inline real32
 ValCellN(uint32_t n, real32* PropAr, uint32_t RCount, uint32_t* NAr)
 {
@@ -77,23 +119,27 @@ ValCellN(uint32_t n, real32* PropAr, uint32_t RCount, uint32_t* NAr)
         }
         n -= NAr[i];
     }
+    // Out of range, should not be reached
+    // TODO: This is a placeholder for error handling
+    return 0.0f;
 }
 
-real32 GSStep(real32** TriArray, real32** PhiArrays, uint32_t N)
+real32
+GSStep(real32** TriArray, real32** PhiArrays, uint32_t N)
 {
 	real32 Convergence = 0.f;
 	
 	
 	PhiArrays[1][0]=(TriArray[3][0]+TriArray[2][0]*PhiArrays[0][1])*TriArray[1][0];
-	Convergence = fmax(Convergence, fabs(PhiArrays[1][0] - PhiArrays[0][0])/PhiArrays[1][0]);
+	Convergence = (real32) fmax(Convergence, fabs(PhiArrays[1][0] - PhiArrays[0][0])/PhiArrays[1][0]);
 	
 	for (uint32_t n = 1; n < N; n++) {
 		PhiArrays[1][n]=(TriArray[3][n]+TriArray[2][n]*PhiArrays[0][n+1]+TriArray[0][n]*PhiArrays[1][n-1])*TriArray[1][n];
-		Convergence = fmax(Convergence, fabs(PhiArrays[1][n] - PhiArrays[0][n])/PhiArrays[1][n]);
+		Convergence = (real32) fmax(Convergence, fabs(PhiArrays[1][n] - PhiArrays[0][n])/PhiArrays[1][n]);
 	}
 	
 	PhiArrays[1][N]=(TriArray[3][N]+TriArray[0][N]*PhiArrays[1][N-1])*TriArray[1][N];
-	Convergence = fmax(Convergence, fabs(PhiArrays[1][N] - PhiArrays[0][N])/PhiArrays[1][N]);
+	Convergence = (real32) fmax(Convergence, fabs(PhiArrays[1][N] - PhiArrays[0][N])/PhiArrays[1][N]);
 	
 	memcpy(PhiArrays[0],PhiArrays[1],sizeof(real32)*(N+1));
 	return Convergence;

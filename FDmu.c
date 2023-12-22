@@ -65,12 +65,7 @@ int main (int argc, char* argv[])
     GSInitVR(GSTriAnsArrays, GSXArrays, N, RegionInfo, NAr);
 	
 	if (DEBUG) printf("\tPerforming Iteration\n");
-    real32 Convergence;
-    do
-    {
-        Convergence = GSStep(GSTriAnsArrays, GSPhiArrays, N);
-    }
-    while (Convergence > EP);
+    GSRun(GSTriAnsArrays, GSPhiArrays, N, EP);
 
     /*
     if (DEBUG) printf("\tAnalytical Values\n");

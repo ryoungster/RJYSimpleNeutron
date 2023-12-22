@@ -54,11 +54,34 @@ void
 GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N);
 
 void
-GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr);
+GSInitVR(real32** TriArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr);
 
 real32
 GSStep(real32** TriArray, real32** PhiArrays, uint32_t N);
 
+void
+GSRun(real32** TriArray, real32** PhiArrays, uint32_t N, real32 GSEps);
+
+real32*
+CopyArray32(real32* Source, uint32_t Count)
+{
+    // Allocates New array to act as copy
+    // I might not end up using this
+    // All arrays are real32 for now (except Number of cells)
+    real32* Dest = (real32*)malloc(Count*sizeof(real32));
+    memcpy(Dest, Source, Count*sizeof(real32));
+    return Dest;
+}
+inline void
+MultArray32(real32* A, real32* B, real32* Dest, uint32_t Count)
+{
+    // All arrays are real32 for now (except Number of cells)
+    // Does work if one of the arguments is the destination
+    for (uint32_t i = 0; i < Count; i++)
+    {
+        Dest[i] = A[i] * B[i]
+    }
+}
 
 void
 GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
@@ -78,7 +101,7 @@ GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
 }
 
 void
-GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t* NAr)
+GSInitVR(real32** TriArray, real32* XArray, uint32_t N, real32** RInfo, uint32_t* NAr)
 {   
     // Init vacuum right
     // All Arrays are assumed zero 
@@ -90,24 +113,24 @@ GSInitVR(real32** TriAnsArray, real32* XArray, uint32_t N, real32** RI, uint32_t
             nInternal = 0;
             RIndex++;
         }
-        real32 s  = RI[0][RIndex];
-        real32 SA = RI[1][RIndex];
-        real32 D  = RI[2][RIndex];
-        real32 dX = RI[3][RIndex];
-        TriAnsArray[1][n]   += D/dX+SA*dX/2.f;
-        TriAnsArray[2][n]   = D/dX;
-        TriAnsArray[3][n]   += s*dX/2.f;
-        TriAnsArray[0][n+1] = D/dX;
-        TriAnsArray[1][n+1] += D/dX+SA*dX/2.f;
-        TriAnsArray[3][n+1] += s*dX/2.f;
+        real32 s  = RInfo[0][RIndex];
+        real32 SA = RInfo[1][RIndex];
+        real32 D  = RInfo[2][RIndex];
+        real32 dX = RInfo[3][RIndex];
+        TriArray[1][n]   += D/dX+SA*dX/2.f;
+        TriArray[2][n]   = D/dX;
+        TriArray[3][n]   += s*dX/2.f;
+        TriArray[0][n+1] = D/dX;
+        TriArray[1][n+1] += D/dX+SA*dX/2.f;
+        TriArray[3][n+1] += s*dX/2.f;
         XArray[n+1]         = XArray[n] + dX;
     }
     //Right Vacuum boundary
-    TriAnsArray[1][N] += 0.5f;
+    TriArray[1][N] += 0.5f;
     
     for (uint32_t n = 0; n < N+1; n++) 
     {
-        TriAnsArray[1][n]   = 1.0f/TriAnsArray[1][n];
+        TriArray[1][n]   = 1.0f/TriArray[1][n];
     }
 }
 
@@ -131,5 +154,18 @@ GSStep(real32** TriArray, real32** PhiArrays, uint32_t N)
 	memcpy(PhiArrays[0],PhiArrays[1],sizeof(real32)*(N+1));
 	return Convergence;
 }
+
+void
+GSRun(real32** TriArray, real32** PhiArrays, uint32_t N, real32 Epsilon)
+{
+    real32 Convergence;
+    do
+    {
+        Convergence = GSStep(TriArray, PhiArrays, N);
+    }
+    while (Convergence > Epsilon);
+
+}
+
 
 #endif

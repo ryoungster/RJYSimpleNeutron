@@ -64,19 +64,13 @@ int main (int argc, char* argv[])
         NAr[0] = N;
         GSInitVR(GSTriAnsArrays[i], GSXArrays[i], N, RegionInfo, NAr);
     }
-    
 	
 	if (DEBUG) printf("\tPerforming Iteration\n");
 	for (uint32_t i = 0; i < GSLEN; i++)
     {
-		uint32_t N = GSVALUES[i];
-		real32 Convergence;
-		do
-		{
-			Convergence = GSStep(GSTriAnsArrays[i], GSPhiArrays[i], N);
-		}
-		while (Convergence > EP);
+        GSRun(GSTriAnsArrays[i], GSPhiArrays[i], GSVALUES[i], EP);
 	}
+
     if (DEBUG) printf("\tAnalytical Values\n");
 	const real32 L = sqrt(D/SA);
 	const real32 VacConst = s0/SA;

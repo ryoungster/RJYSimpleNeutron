@@ -79,7 +79,7 @@ MultArray32(real32* A, real32* B, real32* Dest, uint32_t Count)
     // Does work if one of the arguments is the destination
     for (uint32_t i = 0; i < Count; i++)
     {
-        Dest[i] = A[i] * B[i]
+        Dest[i] = A[i] * B[i];
     }
 }
 
@@ -98,6 +98,17 @@ GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N)
     PhiArrays[1] = (real32*)calloc(N+1, sizeof(real32));
     *XArray      = (real32*)calloc(N+1, sizeof(real32));
 		
+}
+void
+GSFreeOut(real32** TriArray, real32** PhiArrays)
+{
+    // Phi[0] and X are considered output arrays
+    // Will be responsibility of caller
+    free(TriArray[0]);  
+    free(TriArray[1]);
+    free(TriArray[2]);
+    free(TriArray[3]);
+    free(PhiArrays[1]);
 }
 
 void
@@ -134,24 +145,36 @@ GSInitVR(real32** TriArray, real32* XArray, uint32_t N, real32** RInfo, uint32_t
     }
 }
 
-real32
-GSStep(real32** TriArray, real32** PhiArrays, uint32_t N)
+// Double functions to eliminate memcpy
+void
+GSStepR(real32** TriArray, real32** PhiArrays, uint32_t N)
 {
-	real32 Convergence = 0.f;
 	
 	
 	PhiArrays[1][0]=(TriArray[3][0]+TriArray[2][0]*PhiArrays[0][1])*TriArray[1][0];
-	Convergence = (real32) fmax(Convergence, fabs(PhiArrays[1][0] - PhiArrays[0][0])/PhiArrays[1][0]);
 	
 	for (uint32_t n = 1; n < N; n++) {
 		PhiArrays[1][n]=(TriArray[3][n]+TriArray[2][n]*PhiArrays[0][n+1]+TriArray[0][n]*PhiArrays[1][n-1])*TriArray[1][n];
-		Convergence = (real32) fmax(Convergence, fabs(PhiArrays[1][n] - PhiArrays[0][n])/PhiArrays[1][n]);
 	}
 	
 	PhiArrays[1][N]=(TriArray[3][N]+TriArray[0][N]*PhiArrays[1][N-1])*TriArray[1][N];
-	Convergence = (real32) fmax(Convergence, fabs(PhiArrays[1][N] - PhiArrays[0][N])/PhiArrays[1][N]);
+}
+real32
+GSStepL(real32** TriArray, real32** PhiArrays, uint32_t N)
+{
+	real32 Convergence = 0.f;
 	
-	memcpy(PhiArrays[0],PhiArrays[1],sizeof(real32)*(N+1));
+	PhiArrays[0][0]=(TriArray[3][0]+TriArray[2][0]*PhiArrays[1][1])*TriArray[1][0];
+	Convergence = (real32) fmax(Convergence, fabs(PhiArrays[0][0] - PhiArrays[1][0])/PhiArrays[0][0]);
+	
+	for (uint32_t n = 1; n < N; n++) {
+		PhiArrays[0][n]=(TriArray[3][n]+TriArray[2][n]*PhiArrays[1][n+1]+TriArray[0][n]*PhiArrays[0][n-1])*TriArray[1][n];
+		Convergence = (real32) fmax(Convergence, fabs(PhiArrays[0][n] - PhiArrays[1][n])/PhiArrays[0][n]);
+	}
+	
+	PhiArrays[0][N]=(TriArray[3][N]+TriArray[0][N]*PhiArrays[0][N-1])*TriArray[1][N];
+	Convergence = (real32) fmax(Convergence, fabs(PhiArrays[0][N] - PhiArrays[1][N])/PhiArrays[0][N]);
+	
 	return Convergence;
 }
 
@@ -161,10 +184,64 @@ GSRun(real32** TriArray, real32** PhiArrays, uint32_t N, real32 Epsilon)
     real32 Convergence;
     do
     {
-        Convergence = GSStep(TriArray, PhiArrays, N);
+        GSStepR(TriArray, PhiArrays, N);
+        Convergence = GSStepL(TriArray, PhiArrays, N);
     }
     while (Convergence > Epsilon);
 
+}
+
+struct RegionDesc
+{
+    real32* RInfo[4];
+    uint32_t* NAr;
+};
+struct GSOutput
+{
+// Non standard hidden by w4201
+    uint32_t N;
+    union
+    {
+        real32* Arr[2];
+        struct
+        {
+            real32* X;
+            real32* Phi;
+        };
+    };
+};
+struct GSOutput
+GaussSeidel(struct RegionDesc Regions, uint32_t RCount, real32 Epsilon)
+{
+    // Format
+    // Source, SigmaA, D, Region Length
+    struct GSOutput Out = {0};
+    real32* TriArrays[4];
+    real32* PhiArrays[2];
+    real32* XArray;
+    uint32_t N = 0;
+    real32 Length = 0;
+
+    
+    Regions.RInfo[3] = CopyArray32(Regions.RInfo[3], RCount);
+
+    for (uint32_t i = 0; i < RCount; i++)
+    {
+        N += Regions.NAr[i];
+        Length += Regions.RInfo[3][i];
+        Regions.RInfo[3][i] /= (real32)Regions.NAr[i];
+    }
+    GSAlloc(TriArrays, PhiArrays, &XArray, N);
+
+    GSInitVR(TriArrays, XArray, N, Regions.RInfo, Regions.NAr);
+    GSRun(TriArrays, PhiArrays, N, Epsilon);
+
+    GSFreeOut(TriArrays, PhiArrays);
+    free(Regions.RInfo[3]);
+    Out.N = N;
+    Out.X = XArray;
+    Out.Phi = PhiArrays[0];
+    return Out;
 }
 
 

@@ -1,6 +1,6 @@
 @echo off
 
-set CompilerFlags=/Zi /nologo /W4 /c /D_CRT_SECURE_NO_DEPRECATE /DGRAPH_WIN32 /IC:\dislin
+set CompilerFlags=/Zi /nologo /W4 /wd4201 /c /D_CRT_SECURE_NO_DEPRECATE /DGRAPH_WIN32 /IC:\dislin
 set LinkerFlags=/incremental:no /NOLOGO /opt:ref /DEBUG  /DEFAULTLIB:gdi32.lib user32.lib
 REM 5.1 is minimum for x86, 5.2 is min for x64/ARM 
 

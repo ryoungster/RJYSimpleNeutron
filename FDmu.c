@@ -35,7 +35,10 @@ int main (int argc, char* argv[])
     real32 DAr[] = {1.7f, 1.0f};
     real32 aAr[] = {30.0f, 15.0f}; 
     real32 EP    = 1e-7f;
+    struct RegionDesc RD = {{SAr, AAr, DAr, aAr}, NAr};
 
+    struct GSOutput Output = GaussSeidel(RD, RCount, EP);
+    /*
     real32* GSTriAnsArrays[4];
     real32* GSPhiArrays[2];
     real32* GSXArrays;
@@ -66,7 +69,7 @@ int main (int argc, char* argv[])
 	
 	if (DEBUG) printf("\tPerforming Iteration\n");
     GSRun(GSTriAnsArrays, GSPhiArrays, N, EP);
-
+    */
     /*
     if (DEBUG) printf("\tAnalytical Values\n");
 	const real32 L = sqrt(D/SA);
@@ -133,14 +136,14 @@ int main (int argc, char* argv[])
     titlin ("Gauss-Seidel Finite Difference Method", 1);
 
     setgrf("NAME","NAME","TICKS","TICKS");
-    graf   (0.f, Length, 0.f, 20.f, 0.f, 11000.f, 0.f, 2000.f);
+    graf   (0.f, Output.X[Output.N], 0.f, 20.f, 0.f, 11000.f, 0.f, 2000.f);
 
     title();
 	chncrv("COLOR");
 	//curve(GraphArray[0], GraphArray[1], MaxRows);
     
 	incmrk(-1);
-	curve(GSXArrays,GSPhiArrays[0],N+1);
+	curve(Output.X, Output.Phi, Output.N+1);
 
 	color("FORE");
 	

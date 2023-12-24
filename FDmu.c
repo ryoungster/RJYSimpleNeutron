@@ -29,16 +29,17 @@ int main (int argc, char* argv[])
     if (DEBUG) printf("Generating Graph for Multi-Region Example\n");
 
     uint32_t RCount = 2;
-    uint32_t NAr[] = {30, 10}; 
     real32 SAr[] = {1000.0f, 0.0f};
     real32 AAr[] = {.1f, .01f};
     real32 DAr[] = {1.7f, 1.0f};
     real32 aAr[] = {30.0f, 15.0f}; 
+    uint32_t NAr[] = {30, 10}; 
     real32 EP    = 1e-7f;
     struct RegionDesc RD = {RCount, {SAr, AAr, DAr, aAr}, NAr};
 
     if (DEBUG) printf("\tNumerical Values\n");
     struct GSOutput Output = GaussSeidel(RD, EP);
+
     if (DEBUG) printf("\tAnalytical Values\n");
 
 	const real32 FL = sqrt(DAr[0]/AAr[0]);
@@ -107,7 +108,7 @@ int main (int argc, char* argv[])
     titlin ("Gauss-Seidel Finite Difference Method", 1);
 
     setgrf("NAME","NAME","TICKS","TICKS");
-    graf   (0.f, Output.X[Output.N], 0.f, 20.f, 0.f, 11000.f, 0.f, 2000.f);
+    graf   (0.f, Output.X[Output.N], 0.f, Output.X[Output.N]/10, 0.f, 11000.f, 0.f, 2000.f);
 
     title();
 	chncrv("COLOR");
@@ -116,20 +117,6 @@ int main (int argc, char* argv[])
 	incmrk(-1);
 	curve(Output.X, Output.Phi, Output.N+1);
 
-	color("FORE");
-	
-    char LegendBuffer[300];
-    legini(LegendBuffer, 4, 30);
-
-    leglin(LegendBuffer, "Analytical Solution", 1);
-    leglin(LegendBuffer, "N$=10$", 2);
-    leglin(LegendBuffer, "N$=40$", 3);
-	leglin(LegendBuffer, "N$=100$", 4);
-
-	legtit("Legend");
-    //legbgd(0);
-    //legend(LegendBuffer, 3);
-	
     endgrf();
     disfin();
 

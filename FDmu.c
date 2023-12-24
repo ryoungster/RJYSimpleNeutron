@@ -26,7 +26,7 @@ int main (int argc, char* argv[])
     //Seed = 1699659409;
     srand(Seed);
     int DEBUG = 2;
-    if (DEBUG) printf("Generating Graph for HW3-3\n");
+    if (DEBUG) printf("Generating Graph for Multi-Region Example\n");
 
     uint32_t RCount = 2;
     uint32_t NAr[] = {30, 10}; 
@@ -35,51 +35,32 @@ int main (int argc, char* argv[])
     real32 DAr[] = {1.7f, 1.0f};
     real32 aAr[] = {30.0f, 15.0f}; 
     real32 EP    = 1e-7f;
-    struct RegionDesc RD = {{SAr, AAr, DAr, aAr}, NAr};
+    struct RegionDesc RD = {RCount, {SAr, AAr, DAr, aAr}, NAr};
 
-    struct GSOutput Output = GaussSeidel(RD, RCount, EP);
-    /*
-    real32* GSTriAnsArrays[4];
-    real32* GSPhiArrays[2];
-    real32* GSXArrays;
-
-    uint32_t N = 0;
-    real32 Length = 0;
-    for (uint32_t i = 0; i < RCount; i++)
-    {
-        N += NAr[i];
-        Length += aAr[i];
-        aAr[i] /= (real32)NAr[i];
-    }
-
-    
-    if (DEBUG) printf("Allocing Arrays\n");
-    GSAlloc(GSTriAnsArrays, GSPhiArrays, &GSXArrays, N);
-
-    if (DEBUG) printf("Generating Data\n");
-
-    // Format:
-    // Source, SigmaA, D, deltaX
-    real32* RegionInfo[] = {SAr, AAr, DAr, aAr};
-
-
-	if (DEBUG) printf("\tSetting-Up Arrays\n");
-
-    GSInitVR(GSTriAnsArrays, GSXArrays, N, RegionInfo, NAr);
-	
-	if (DEBUG) printf("\tPerforming Iteration\n");
-    GSRun(GSTriAnsArrays, GSPhiArrays, N, EP);
-    */
-    /*
+    if (DEBUG) printf("\tNumerical Values\n");
+    struct GSOutput Output = GaussSeidel(RD, EP);
     if (DEBUG) printf("\tAnalytical Values\n");
-	const real32 L = sqrt(D/SA);
-	const real32 VacConst = s0/SA;
-	const real32 VacDiv = 1.0f/(cosh(a/L)+2.f*D/L*sinh(a/L));
+
+	const real32 FL = sqrt(DAr[0]/AAr[0]);
+	const real32 RL = sqrt(DAr[1]/AAr[1]);
+    const real32 RC = (1.0f+2.0f*DAr[1]/RL*tanh(aAr[1]/RL))/(2.0f*DAr[1]/RL+tanh(aAr[1]/RL));
+    const real32 FC = 1/(DAr[0]/FL*RL/DAr[1]/RC*sinh(aAr[0]/FL)+cosh(aAr[0]/FL));
+    const real32 FA = -SAr[0]/AAr[0]*FC;
+    const real32 RA = FA*cosh(aAr[0]/FL)+SAr[0]/AAr[0];
+
 	for (uint32_t  i = 0; i < MaxRows; i++)
     {
-        GraphArray[0][i] = ((real32)i)/((real32)(MaxRows-1))*a;
-        GraphArray[1][i]=VacConst*(1-cosh(GraphArray[0][i]/L)*VacDiv);
+        GraphArray[0][i] = ((real32)i)/((real32)(MaxRows-1))*Output.X[Output.N];
+        if (GraphArray[0][i] < aAr[0])
+        {
+            GraphArray[1][i]=SAr[0]/AAr[0]*(1-cosh(GraphArray[0][i]/FL)*FC);
+        }
+        else
+        {
+            GraphArray[1][i]=RA * (cosh((GraphArray[0][i]-aAr[0])/RL) - RC * sinh((GraphArray[0][i]-aAr[0])/RL));
+        }
     }
+    /*
 	if (DEBUG) printf("\tError Values\n");
 	for (uint32_t i = 0; i < GSLEN; i++)
 	{
@@ -106,19 +87,9 @@ int main (int argc, char* argv[])
     
     if (DEBUG) printf("Starting Graphing\n");
 
-    if (1)//(DEBUG > 1) 
-    {
-        metafl("XWIN");
-    } 
-    else
-    {
-#define OutFile "../texImage/NSE451-HW3-3.EPS"
-        metafl("EPS");
-        remove(OutFile);
-    }
+    metafl("XWIN");
     winsiz(1500,1060);
     setpag("da4l");
-    setfil(OutFile);
     disini();
     setvlt("RRAIN");
 	clrcyc(4,210); // Replace yellow with a blue
@@ -140,7 +111,7 @@ int main (int argc, char* argv[])
 
     title();
 	chncrv("COLOR");
-	//curve(GraphArray[0], GraphArray[1], MaxRows);
+	curve(GraphArray[0], GraphArray[1], MaxRows);
     
 	incmrk(-1);
 	curve(Output.X, Output.Phi, Output.N+1);

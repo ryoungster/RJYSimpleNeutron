@@ -62,12 +62,10 @@ GSStep(real32** TriArray, real32** PhiArrays, uint32_t N);
 void
 GSRun(real32** TriArray, real32** PhiArrays, uint32_t N, real32 GSEps);
 
-real32*
+inline real32*
 CopyArray32(real32* Source, uint32_t Count)
 {
     // Allocates New array to act as copy
-    // I might not end up using this
-    // All arrays are real32 for now (except Number of cells)
     real32* Dest = (real32*)malloc(Count*sizeof(real32));
     memcpy(Dest, Source, Count*sizeof(real32));
     return Dest;
@@ -75,8 +73,7 @@ CopyArray32(real32* Source, uint32_t Count)
 inline void
 MultArray32(real32* A, real32* B, real32* Dest, uint32_t Count)
 {
-    // All arrays are real32 for now (except Number of cells)
-    // Does work if one of the arguments is the destination
+    // Does work if one of the arguments is the destination (and baring order issues)
     for (uint32_t i = 0; i < Count; i++)
     {
         Dest[i] = A[i] * B[i];
@@ -193,7 +190,10 @@ GSRun(real32** TriArray, real32** PhiArrays, uint32_t N, real32 Epsilon)
 
 struct RegionDesc
 {
+    uint32_t RCount;
     real32* RInfo[4];
+    // NAr is arguably a property of the numerical method, 
+    // but it is per region and determines size of output
     uint32_t* NAr;
 };
 struct GSOutput
@@ -211,10 +211,11 @@ struct GSOutput
     };
 };
 struct GSOutput
-GaussSeidel(struct RegionDesc Regions, uint32_t RCount, real32 Epsilon)
+GaussSeidel(struct RegionDesc Regions, real32 Epsilon)
 {
     // Format
     // Source, SigmaA, D, Region Length
+    // Left Reflecting, Right Vacuum
     struct GSOutput Out = {0};
     real32* TriArrays[4];
     real32* PhiArrays[2];
@@ -222,22 +223,25 @@ GaussSeidel(struct RegionDesc Regions, uint32_t RCount, real32 Epsilon)
     uint32_t N = 0;
     real32 Length = 0;
 
-    
-    Regions.RInfo[3] = CopyArray32(Regions.RInfo[3], RCount);
+    // Copy to avoid modifying parameter
+    Regions.RInfo[3] = CopyArray32(Regions.RInfo[3], Regions.RCount);
 
-    for (uint32_t i = 0; i < RCount; i++)
+    for (uint32_t i = 0; i < Regions.RCount; i++)
     {
         N += Regions.NAr[i];
         Length += Regions.RInfo[3][i];
         Regions.RInfo[3][i] /= (real32)Regions.NAr[i];
     }
+
     GSAlloc(TriArrays, PhiArrays, &XArray, N);
 
     GSInitVR(TriArrays, XArray, N, Regions.RInfo, Regions.NAr);
+
     GSRun(TriArrays, PhiArrays, N, Epsilon);
 
     GSFreeOut(TriArrays, PhiArrays);
-    free(Regions.RInfo[3]);
+    free(Regions.RInfo[3]); // Free Allocated Edited Array
+
     Out.N = N;
     Out.X = XArray;
     Out.Phi = PhiArrays[0];

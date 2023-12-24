@@ -248,5 +248,43 @@ GaussSeidel(struct RegionDesc Regions, real32 Epsilon)
     return Out;
 }
 
+struct MCOutput
+{
+// Non standard hidden by w4201
+    uint32_t N;
+    union
+    {
+        real32* Arr[2];
+        struct
+        {
+            real32* X;
+            real32* Phi;
+        };
+    };
+};
+struct MCOutput
+MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
+{
+    struct MCOutput Out = {0};
+    uint32_t N = 0;
+    real32 Length = 0;
+
+    for (uint32_t i = 0; i < Regions.RCount; i++)
+    {
+        N += Regions.NAr[i];
+        Length += Regions.RInfo[3][i];
+        Regions.RInfo[3][i] /= (real32)Regions.NAr[i];
+    }
+    real32* XArray = malloc(N*sizeof(real32));
+    real32* PhiArray = malloc(N*sizeof(real32));
+    uint32_t* BinArray = malloc(N*sizeof(uint32_t));
+
+    free(BinArray);
+    Out.N = N;
+    Out.X = XArray;
+    Out.Phi = PhiArrays;
+    return Out;
+}
+
 
 #endif

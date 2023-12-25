@@ -22,6 +22,7 @@ Given compilation script for examples expects DISLIN libraries and windows.
 
 PLANS:
 Finish Monte-Carlo
+Re-evaluate choice to put everything in one header
 Power iteration/Monte Carlo k-calc
 Standardise Input formating into something nice (look into dataset based internal calculation)
 Time Dependent Calculations

@@ -114,17 +114,21 @@ GSInitVR(real32** TriArray, real32* XArray, uint32_t N, real32** RInfo, uint32_t
     // Init vacuum right
     // All Arrays are assumed zero 
     uint32_t RIndex = 0;
+    real32 s  = RInfo[0][RIndex];
+    real32 SA = RInfo[1][RIndex];
+    real32 D  = RInfo[2][RIndex];
+    real32 dX = RInfo[3][RIndex];
     for (uint32_t n = 0, nInternal = 0; n < N; n++, nInternal++)
     {
         if (nInternal >= NAr[RIndex])
         {
             nInternal = 0;
             RIndex++;
+            s  = RInfo[0][RIndex];
+            SA = RInfo[1][RIndex];
+            D  = RInfo[2][RIndex];
+            dX = RInfo[3][RIndex];
         }
-        real32 s  = RInfo[0][RIndex];
-        real32 SA = RInfo[1][RIndex];
-        real32 D  = RInfo[2][RIndex];
-        real32 dX = RInfo[3][RIndex];
         TriArray[1][n]   += D/dX+SA*dX/2.f;
         TriArray[2][n]   = D/dX;
         TriArray[3][n]   += s*dX/2.f;
@@ -266,19 +270,56 @@ struct MCOutput
 MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
 {
     // MonteCarlo using collision estimator
+    // Format Source, SS/ST, SigmaT, Length
     struct MCOutput Out = {0};
+
     uint32_t N = 0;
     real32 Length = 0;
+
+    real32 SourceSpace = 0;
+    real32* WeightedSAr = malloc(Regions.RCount * sizeof(real32));
 
     for (uint32_t i = 0; i < Regions.RCount; i++)
     {
         N += Regions.NAr[i];
         Length += Regions.RInfo[3][i];
+        WeightedSAr[i] =  Regions.RInfo[0][i]*Regions.RInfo[3][i];
+        SourceSpace += WeightedSAr[i];
         Regions.RInfo[3][i] /= (real32)Regions.NAr[i];
     }
-    real32* XArray = malloc(N*sizeof(real32));
-    real32* PhiArray = malloc(N*sizeof(real32));
-    uint32_t* BinArray = malloc(N*sizeof(uint32_t));
+    uint32_t* BinArray = calloc(N, sizeof(uint32_t));
+    real32* XArray = calloc(N, sizeof(real32));
+    real32* PhiArray = malloc(N * sizeof(real32));
+
+    { //TODO:Pull out midpoint xgen into a function
+        uint32_t RIndex = 0 , nInternal = 0;
+        real32 dX = Regions.RInfo[3][RIndex];
+        for (uint32_t n = 0; n < N-1; n++, nInternal++)
+        {
+            if (nInternal >= Regions.NAr[RIndex])
+            {
+                nInternal = 0;
+                RIndex++;
+                dX = Regions.RInfo[3][RIndex];
+            }
+            XArray[n] += dX/2;
+            XArray[n+1] += XArray[n] + dX/2;
+        }
+        if (nInternal >= Regions.NAr[RIndex])
+        {
+            nInternal = 0;
+            RIndex++;
+            dX = Regions.RInfo[3][RIndex];
+        }
+        XArray[N-1] += dX/2;
+    }
+    
+    for (uint32_t n = 0; n < Histories; n++)
+    {
+        real32 x = randReal32() * SourceSpace;
+        real32 mu = randReal32() * 2.f - 1.f;
+        uint32_t RID;
+    }
 
     free(BinArray);
     Out.N = N;

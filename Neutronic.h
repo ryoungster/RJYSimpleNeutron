@@ -265,6 +265,7 @@ struct MCOutput
 struct MCOutput
 MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
 {
+    // MonteCarlo using collision estimator
     struct MCOutput Out = {0};
     uint32_t N = 0;
     real32 Length = 0;
@@ -282,7 +283,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
     free(BinArray);
     Out.N = N;
     Out.X = XArray;
-    Out.Phi = PhiArrays;
+    Out.Phi = PhiArray;
     return Out;
 }
 

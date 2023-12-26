@@ -319,6 +319,20 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         real32 x = randReal32() * SourceSpace;
         real32 mu = randReal32() * 2.f - 1.f;
         uint32_t RID;
+        // Find spawn location using weighted locations
+        for (RID = 0; RID < Regions.RCount; RID++)
+        {
+            if (x < WeightedSAr[RID])
+            {
+                //Predivide this?
+                x = x / Regions.RInfo[0][RID];
+                break;
+            }
+            else
+            {
+                x -= Regions.RInfo[0][RID];
+            }
+        }
     }
 
     free(BinArray);

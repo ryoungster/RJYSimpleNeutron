@@ -40,20 +40,6 @@ int main (int argc, char* argv[])
     int DEBUG = 2;
     if (DEBUG) printf("Generating Graph for HW3-4-2\n");
 
-    /*
-    if (DEBUG) printf("Allocing Arrays\n");
-    for (uint32_t i = 0; i < GSLEN; i++)
-    {
-        GSTriAnsArrays[i][0] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-        GSTriAnsArrays[i][1] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-		GSTriAnsArrays[i][2] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-		GSTriAnsArrays[i][3] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-		GSPhiArrays[i][0] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-        GSPhiArrays[i][1] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-		GSXArrays[i] = malloc(sizeof(real32)*(GSVALUES[i]+1));
-    }
-    */
-
     if (DEBUG) printf("Generating Data\n");
 	const real32 DX = a/(real32)NBIN;
 	if (DEBUG) printf("\tSetting-Up Arrays\n");

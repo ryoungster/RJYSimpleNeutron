@@ -252,6 +252,12 @@ GaussSeidel(struct RegionDesc Regions, real32 Epsilon)
     return Out;
 }
 
+inline real32
+IsoMu()
+{
+    return (randReal32()*2.f-1.f)
+}
+
 struct MCOutput
 {
 // Non standard hidden by w4201
@@ -278,6 +284,8 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
 
     real32 SourceSpace = 0;
     real32* WeightedSAr = malloc(Regions.RCount * sizeof(real32));
+    //TODO: Check if this is needed anywhere besides midpointX
+    real32* DXAr = malloc(Regions.RCount * sizeof(real32));
 
     for (uint32_t i = 0; i < Regions.RCount; i++)
     {
@@ -285,7 +293,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         Length += Regions.RInfo[3][i];
         WeightedSAr[i] =  Regions.RInfo[0][i]*Regions.RInfo[3][i];
         SourceSpace += WeightedSAr[i];
-        Regions.RInfo[3][i] /= (real32)Regions.NAr[i];
+        DXAr[i] = Regions.RInfo[3][i] / (real32)Regions.NAr[i];
     }
     uint32_t* BinArray = calloc(N, sizeof(uint32_t));
     real32* XArray = calloc(N, sizeof(real32));
@@ -293,14 +301,14 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
 
     { //TODO:Pull out midpoint xgen into a function
         uint32_t RIndex = 0 , nInternal = 0;
-        real32 dX = Regions.RInfo[3][RIndex];
+        real32 dX = DXAr[RIndex];
         for (uint32_t n = 0; n < N-1; n++, nInternal++)
         {
             if (nInternal >= Regions.NAr[RIndex])
             {
                 nInternal = 0;
                 RIndex++;
-                dX = Regions.RInfo[3][RIndex];
+                dX = DXAr[RIndex];
             }
             XArray[n] += dX/2;
             XArray[n+1] += XArray[n] + dX/2;
@@ -309,7 +317,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         {
             nInternal = 0;
             RIndex++;
-            dX = Regions.RInfo[3][RIndex];
+            dX = DXAr[RIndex];
         }
         XArray[N-1] += dX/2;
     }
@@ -317,20 +325,71 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
     for (uint32_t n = 0; n < Histories; n++)
     {
         real32 x = randReal32() * SourceSpace;
-        real32 mu = randReal32() * 2.f - 1.f;
+        real32 mu = IsoMu();
         uint32_t RID;
         // Find spawn location using weighted locations
         for (RID = 0; RID < Regions.RCount; RID++)
         {
             if (x < WeightedSAr[RID])
             {
-                //Predivide this?
+                // Divide by Source
+                //TODO:Predivide this?
                 x = x / Regions.RInfo[0][RID];
                 break;
             }
             else
             {
-                x -= Regions.RInfo[0][RID];
+                x -= WeightedSAr[RID];
+            }
+        }
+        // Distance to collision in region
+        //TODO:Predivide this? Wrap it in function?
+        real32 DColl = -1.f*log(randReal32()) / Regions.RInfo[2][RID]; 
+        x += mu * DColl;
+        if (;;) // Infinite loop until neutron death
+        {
+            if (x<0)
+            {
+                // Left Overflow
+                RID--;
+                if (RID < 0)
+                {
+                    //Reflected Boundary
+                    mu = -mu;
+                    RID++;
+                    x = -x;
+                }
+                else
+                {
+                    // Enters new region
+                    // Translate (Negative) Distance to new SigT
+                    x *= Regions.RInfo[2][RID+1]/ Regions.RInfo[2][RID];
+                    // Offset (Negative) Distance by Region Length
+                    x += Regions.RInfo[3][RID];
+                }
+
+            }
+            else if (x > Regions.RInfo[3][RID])
+            {
+                // Right Overflow
+                RID++;
+                if (RID >= Regions.RCount)
+                {
+                    // Vacuum Boundary
+                    break
+                }
+                else
+                {
+                    // Enters new region
+                    // Offset Distance by Old Region Length
+                    x -= Regions.RInfo[3][RID-1];
+                    // Translate  Distance to new SigT
+                    x *= Regions.RInfo[2][RID-1]/ Regions.RInfo[2][RID];
+                }
+            }
+            else
+            {
+                // Collides in region
             }
         }
     }

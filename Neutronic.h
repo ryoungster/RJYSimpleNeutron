@@ -390,6 +390,27 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
             else
             {
                 // Collides in region
+                uint32_t BinID = 0;
+                for (uint32_t i = 0; i < RID; i++)
+                {
+                    // Previous regions
+                    BinID += Regions.NAr[i];
+                }
+                BinID += floor((x * (real32) Regions.NAr[RID]) / Regions.RInfo[3][RID]);
+                BinArray[BinID]++;
+
+                if (randReal32() > Regions.RInfo[1])
+                {
+                    // Absorbed
+                    break;
+                }
+                else
+                {
+                    // Scattered
+                    mu = IsoMu();
+                    DColl = -1.f*log(randReal32()) / Regions.RInfo[2][RID]; 
+                    x += mu * DColl;
+                }
             }
         }
     }

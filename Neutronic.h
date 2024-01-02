@@ -284,8 +284,8 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
 
     real32 SourceSpace = 0;
     real32* WeightedSAr = malloc(Regions.RCount * sizeof(real32));
-    //TODO: Check if this is needed anywhere besides midpointX
     real32* DXAr = malloc(Regions.RCount * sizeof(real32));
+    // TODO: Look at predividing frequently used inverses
 
     for (uint32_t i = 0; i < Regions.RCount; i++)
     {
@@ -413,6 +413,25 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
                 }
             }
         }
+    }
+
+    {
+    // PhiArray from Bins
+    uint32_t RIndex = 0;
+    real32 InvST = 1/RInfo[2][RIndex];
+    real32 InvDX = 1/DXAr[RIndex];
+    real32 HistScale = SourceSpace / (real32) Histories;
+    for (uint32_t n = 0, nInternal = 0; n < N; n++, nInternal++)
+    {
+        if (nInternal >= NAr[RIndex])
+        {
+            nInternal = 0;
+            RIndex++;
+            InvST = 1/RInfo[2][RIndex];
+            InvDX = 1/DXAr[RIndex];
+        }
+        PhiArray[n] = BinArray[n] * InvST * InvDX * HistScale;
+    }
     }
 
     free(BinArray);

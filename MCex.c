@@ -12,8 +12,8 @@
 const uint32_t MCVALUES[] = {1e4,1e5,1e6};
 #define NBIN 100
 #define MCLEN ArrayCount(MCVALUES)
-uint32_t MCBinArrays[MCLEN][NBIN];
-real32 MCPhiArrays[MCLEN][NBIN];
+//uint32_t MCBinArrays[MCLEN][NBIN];
+real32* MCPhiArrays[MCLEN];
 real32 MCXArray[NBIN];
 //real32 GSErrorArray[GSLEN];
 //real32 TTimeArray[TLEN];
@@ -41,12 +41,27 @@ int main (int argc, char* argv[])
     if (DEBUG) printf("Generating Graph for HW3-4-2\n");
 
     if (DEBUG) printf("Generating Data\n");
-	const real32 DX = a/(real32)NBIN;
 	if (DEBUG) printf("\tSetting-Up Arrays\n");
+    real32 SAr[] = {s0};
+    real32 cAr[] = {SS/(SA+SS)};
+    real32 TAr[] = {(SA+SS)};
+    real32 aAr[] = {a};
+    uint32_t NAr[] = {NBIN};
+    struct RegionDesc RD = {1, {SAr, cAr, TAr, aAr}, NAr};
+	for (uint32_t i = 0; i < MCLEN; i++)
+    {
+		uint32_t N = MCVALUES[i];
+        struct MCOutput Output = MonteCarlo(RD, N);
+        free(Output.X);
+        MCPhiArrays[i] = Output.Phi;
+    }
+    
+	const real32 DX = a/(real32)NBIN;
 	for (uint32_t i = 0; i < NBIN; i++)
     {
 		MCXArray[i] = (real32)i*DX+DX/2.f;
     }
+    /*
     
 	
 	if (DEBUG) printf("\tPerforming Monte Carlo\n");
@@ -98,7 +113,7 @@ int main (int argc, char* argv[])
 			MCPhiArrays[i][j] = (real32)MCBinArrays[i][j]*a*s0*DivDX/(real32)N*DivST;
 		}
 	}
-
+    */
     if (DEBUG) printf("\tAnalytical Values\n");
 	const real32 D = 1/(3*(SA+SS));
 	const real32 L = sqrt(D/SA);

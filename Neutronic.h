@@ -255,7 +255,7 @@ GaussSeidel(struct RegionDesc Regions, real32 Epsilon)
 inline real32
 IsoMu()
 {
-    return (randReal32()*2.f-1.f)
+    return (randReal32()*2.f-1.f);
 }
 
 struct MCOutput
@@ -344,23 +344,22 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         }
         // Distance to collision in region
         //TODO:Predivide this? Wrap it in function?
-        real32 DColl = -1.f*log(randReal32()) / Regions.RInfo[2][RID]; 
+        real32 DColl =  -1.f*log(randReal32()) / Regions.RInfo[2][RID]; 
         x += mu * DColl;
-        if (;;) // Infinite loop until neutron death
+        for (;;) // Infinite loop until neutron death
         {
             if (x<0)
             {
                 // Left Overflow
-                RID--;
-                if (RID < 0)
+                if (RID == 0)
                 {
                     //Reflected Boundary
                     mu = -mu;
-                    RID++;
                     x = -x;
                 }
                 else
                 {
+                    RID--;
                     // Enters new region
                     // Translate (Negative) Distance to new SigT
                     x *= Regions.RInfo[2][RID+1]/ Regions.RInfo[2][RID];
@@ -376,7 +375,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
                 if (RID >= Regions.RCount)
                 {
                     // Vacuum Boundary
-                    break
+                    break;
                 }
                 else
                 {
@@ -396,10 +395,10 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
                     // Previous regions
                     BinID += Regions.NAr[i];
                 }
-                BinID += floor((x * (real32) Regions.NAr[RID]) / Regions.RInfo[3][RID]);
+                BinID += (uint32_t) ((x * (real32) Regions.NAr[RID]) / Regions.RInfo[3][RID]);
                 BinArray[BinID]++;
 
-                if (randReal32() > Regions.RInfo[1])
+                if (randReal32() > Regions.RInfo[1][RID])
                 {
                     // Absorbed
                     break;
@@ -418,16 +417,16 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
     {
     // PhiArray from Bins
     uint32_t RIndex = 0;
-    real32 InvST = 1/RInfo[2][RIndex];
+    real32 InvST = 1/Regions.RInfo[2][RIndex];
     real32 InvDX = 1/DXAr[RIndex];
     real32 HistScale = SourceSpace / (real32) Histories;
     for (uint32_t n = 0, nInternal = 0; n < N; n++, nInternal++)
     {
-        if (nInternal >= NAr[RIndex])
+        if (nInternal >= Regions.NAr[RIndex])
         {
             nInternal = 0;
             RIndex++;
-            InvST = 1/RInfo[2][RIndex];
+            InvST = 1/Regions.RInfo[2][RIndex];
             InvDX = 1/DXAr[RIndex];
         }
         PhiArray[n] = BinArray[n] * InvST * InvDX * HistScale;

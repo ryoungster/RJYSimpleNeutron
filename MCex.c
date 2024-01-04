@@ -9,7 +9,7 @@
 
 
 
-const uint32_t MCVALUES[] = {1e4,1e5,1e6};
+const uint32_t MCVALUES[] = {1e5,1e6,1e7};
 #define NBIN 100
 #define MCLEN ArrayCount(MCVALUES)
 //uint32_t MCBinArrays[MCLEN][NBIN];
@@ -199,9 +199,9 @@ int main (int argc, char* argv[])
     legini(LegendBuffer, 4, 30);
 
     leglin(LegendBuffer, "Analytical Solution", 1);
-    leglin(LegendBuffer, "N=1e4", 2);
-    leglin(LegendBuffer, "N=1e5", 3);
-	leglin(LegendBuffer, "N=1e6", 4);
+    leglin(LegendBuffer, "N=1e5", 2);
+    leglin(LegendBuffer, "N=1e6", 3);
+	leglin(LegendBuffer, "N=1e7", 4);
 
 	legtit("Legend");
     //legbgd(0);

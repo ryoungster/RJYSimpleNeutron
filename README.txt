@@ -5,7 +5,7 @@ Implementing Monte Carlo and Finite-Difference neutron transport/diffusion numer
 Based on course-work for NSE 451.
 
 USAGE:
-Presenlty only Gauss-Seidel Finite Difference is implemented for steady state, non-multiplying slabs (Plus other approximations in diffusion). To use:
+Presently only Gauss-Seidel Finite Difference is implemented for steady state, non-multiplying slabs (Plus other approximations in diffusion). To use:
     Include "Neutronic.h"
     Format your region data into the RegionDesc struct:
         Region Count

@@ -38,7 +38,7 @@ int main (int argc, char* argv[])
     struct RegionDesc RD = {RCount, {SAr, cAr, TAr, aAr}, NAr};
 
     if (DEBUG) printf("\tNumerical Values\n");
-    struct MCOutput Output = MonteCarlo(RD, Hist);
+    struct ArOutput Output = MonteCarlo(RD, Hist);
 
     if (DEBUG) printf("\tAnalytical Values\n");
 

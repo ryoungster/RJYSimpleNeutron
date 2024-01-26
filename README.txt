@@ -13,7 +13,7 @@ Presently only Gauss-Seidel Finite Difference is implemented for steady state, n
         Array of Cells per Region
     Run "GaussSeidel(RegionDesc, Epsilon)" with your chosen covergence criteria
     Returned data will be a GSOutput struct with with members:
-        Cell count (Array Lengths are 1+ this value due to edges)
+        Array Length
         Array of X-Values
         Array of Phi-Values
     In the examples this data is graphed using DISLIN (www.dislin.de) a free graphing library.

@@ -49,6 +49,28 @@ Win32GetSecondsElapsed(LARGE_INTEGER Start, LARGE_INTEGER End)
 typedef LARGE_INTEGER TimerCount;
 #endif
 
+struct RegionDesc
+{
+    uint32_t RCount;
+    real32* RInfo[4];
+    // NAr is arguably a property of the numerical method, 
+    // but it is per region and determines size of output
+    uint32_t* NAr;
+};
+struct ArOutput
+{
+// Non standard hidden by w4201
+    uint32_t N;
+    union
+    {
+        real32* Arr[2];
+        struct
+        {
+            real32* X;
+            real32* Phi;
+        };
+    };
+};
 
 void
 GSAlloc(real32** TriArray, real32** PhiArrays, real32** XArray, uint32_t N);
@@ -192,29 +214,8 @@ GSRun(real32** TriArray, real32** PhiArrays, uint32_t N, real32 Epsilon)
 
 }
 
-struct RegionDesc
-{
-    uint32_t RCount;
-    real32* RInfo[4];
-    // NAr is arguably a property of the numerical method, 
-    // but it is per region and determines size of output
-    uint32_t* NAr;
-};
-struct GSOutput
-{
-// Non standard hidden by w4201
-    uint32_t N;
-    union
-    {
-        real32* Arr[2];
-        struct
-        {
-            real32* X;
-            real32* Phi;
-        };
-    };
-};
-struct GSOutput
+
+struct ArOutput
 GaussSeidel(struct RegionDesc Regions, real32 Epsilon)
 {
     // Format
@@ -246,7 +247,7 @@ GaussSeidel(struct RegionDesc Regions, real32 Epsilon)
     GSFreeOut(TriArrays, PhiArrays);
     free(Regions.RInfo[3]); // Free Allocated Edited Array
 
-    Out.N = N;
+    Out.N = N+1;
     Out.X = XArray;
     Out.Phi = PhiArrays[0];
     return Out;
@@ -258,21 +259,32 @@ IsoMu()
     return (randReal32()*2.f-1.f);
 }
 
-struct MCOutput
-{
-// Non standard hidden by w4201
-    uint32_t N;
-    union
+void
+MidpointX(real32* XArray, struct RegionDesc Regions)
+{ 
+    uint32_t RIndex = 0 , nInternal = 0;
+    real32 dX = DXAr[RIndex];
+    for (uint32_t n = 0; n < N-1; n++, nInternal++)
     {
-        real32* Arr[2];
-        struct
+        if (nInternal >= Regions.NAr[RIndex])
         {
-            real32* X;
-            real32* Phi;
-        };
-    };
-};
-struct MCOutput
+            nInternal = 0;
+            RIndex++;
+            dX = DXAr[RIndex];
+        }
+        XArray[n] += dX/2;
+        XArray[n+1] += XArray[n] + dX/2;
+    }
+    if (nInternal >= Regions.NAr[RIndex])
+    {
+        nInternal = 0;
+        RIndex++;
+        dX = DXAr[RIndex];
+    }
+    XArray[N-1] += dX/2;
+}
+
+struct ArOutput
 MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
 {
     // MonteCarlo using collision estimator
@@ -301,29 +313,8 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
     real32* XArray = calloc(N, sizeof(real32));
     real32* PhiArray = malloc(N * sizeof(real32));
 
-    { //TODO:Pull out midpoint xgen into a function
-        uint32_t RIndex = 0 , nInternal = 0;
-        real32 dX = DXAr[RIndex];
-        for (uint32_t n = 0; n < N-1; n++, nInternal++)
-        {
-            if (nInternal >= Regions.NAr[RIndex])
-            {
-                nInternal = 0;
-                RIndex++;
-                dX = DXAr[RIndex];
-            }
-            XArray[n] += dX/2;
-            XArray[n+1] += XArray[n] + dX/2;
-        }
-        if (nInternal >= Regions.NAr[RIndex])
-        {
-            nInternal = 0;
-            RIndex++;
-            dX = DXAr[RIndex];
-        }
-        XArray[N-1] += dX/2;
-    }
-    
+    MidpointX(XArray, Regions);
+
     for (uint32_t n = 0; n < Histories; n++)
     {
         real32 x = randReal32() * SourceSpace;

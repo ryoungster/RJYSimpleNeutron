@@ -285,6 +285,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
     real32 SourceSpace = 0;
     real32* WeightedSAr = malloc(Regions.RCount * sizeof(real32));
     real32* DXAr = malloc(Regions.RCount * sizeof(real32));
+    real32* InvSTAr = malloc(Regions.RCount * sizeof(real32));
     // TODO: Look at predividing frequently used inverses
 
     for (uint32_t i = 0; i < Regions.RCount; i++)
@@ -294,6 +295,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         WeightedSAr[i] =  Regions.RInfo[0][i]*Regions.RInfo[3][i];
         SourceSpace += WeightedSAr[i];
         DXAr[i] = Regions.RInfo[3][i] / (real32)Regions.NAr[i];
+        InvSTAr[i] = 1/Regions.RInfo[2][i];
     }
     uint32_t* BinArray = calloc(N, sizeof(uint32_t));
     real32* XArray = calloc(N, sizeof(real32));
@@ -344,7 +346,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         }
         // Distance to collision in region
         //TODO:Predivide this? Wrap it in function?
-        real32 DColl =  -1.f*log(randReal32()) / Regions.RInfo[2][RID]; 
+        real32 DColl =  -1.f*log(randReal32()) * InvSTAr[RID]; 
         x += mu * DColl;
         for (;;) // Infinite loop until neutron death
         {
@@ -362,7 +364,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
                     RID--;
                     // Enters new region
                     // Translate (Negative) Distance to new SigT
-                    x *= Regions.RInfo[2][RID+1]/ Regions.RInfo[2][RID];
+                    x *= Regions.RInfo[2][RID+1]* InvSTAr[RID];
                     // Offset (Negative) Distance by Region Length
                     x += Regions.RInfo[3][RID];
                 }
@@ -383,7 +385,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
                     // Offset Distance by Old Region Length
                     x -= Regions.RInfo[3][RID-1];
                     // Translate  Distance to new SigT
-                    x *= Regions.RInfo[2][RID-1]/ Regions.RInfo[2][RID];
+                    x *= Regions.RInfo[2][RID-1]* InvSTAr[RID];
                 }
             }
             else
@@ -407,7 +409,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
                 {
                     // Scattered
                     mu = IsoMu();
-                    DColl = -1.f*log(randReal32()) / Regions.RInfo[2][RID]; 
+                    DColl = -1.f*log(randReal32()) * InvSTAr[RID]; 
                     x += mu * DColl;
                 }
             }
@@ -417,7 +419,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
     {
     // PhiArray from Bins
     uint32_t RIndex = 0;
-    real32 InvST = 1/Regions.RInfo[2][RIndex];
+    real32 InvST = InvSTAr[RIndex];
     real32 InvDX = 1/DXAr[RIndex];
     real32 HistScale = SourceSpace / (real32) Histories;
     for (uint32_t n = 0, nInternal = 0; n < N; n++, nInternal++)
@@ -426,7 +428,7 @@ MonteCarlo(struct RegionDesc Regions, uint32_t Histories)
         {
             nInternal = 0;
             RIndex++;
-            InvST = 1/Regions.RInfo[2][RIndex];
+            InvST = InvSTAr[RIndex];
             InvDX = 1/DXAr[RIndex];
         }
         PhiArray[n] = BinArray[n] * InvST * InvDX * HistScale;

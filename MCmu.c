@@ -33,7 +33,7 @@ int main (int argc, char* argv[])
     real32 cAr[] = {1.f - .1f*1.7f*3.f, 1.f - .01f*3.f};
     real32 TAr[] = {1.f/1.7f/3.f, 1.f/1.0f/3.f}; // Conversions atcompile time for example
     real32 aAr[] = {30.0f, 15.0f}; 
-    uint32_t NAr[] = {30, 10}; 
+    uint32_t NAr[] = {30, 20}; 
     real32 Hist    = 1e7f;
     struct RegionDesc RD = {RCount, {SAr, cAr, TAr, aAr}, NAr};
 
@@ -117,7 +117,7 @@ int main (int argc, char* argv[])
 	curve(GraphArray[0], GraphArray[1], MaxRows);
     
 	incmrk(-1);
-	curve(Output.X, Output.Phi, Output.N+1);
+	curve(Output.X, Output.Phi, Output.N);
 
     endgrf();
     disfin();

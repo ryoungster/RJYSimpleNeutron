@@ -1,8 +1,8 @@
 SimpleNeutron
 
 INTRO:
-Implementing Monte Carlo and Finite-Difference neutron transport/diffusion numerical models as a header based library in C. 
-Based on course-work for NSE 451.
+Implementing Monte Carlo and Finite-Difference neutron transport/diffusion numerical models as a simple library in C. 
+Based on course-work for NSE 451 at Oregon State University.
 
 USAGE:
 Presently only Gauss-Seidel Finite Difference is implemented for steady state, non-multiplying slabs (Plus other approximations in diffusion). To use:
